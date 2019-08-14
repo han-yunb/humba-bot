@@ -30,7 +30,7 @@ Someone said if Steven Gerrard have a name of Humba Humba, he can't be a great p
 
 That little sentence become soooo famous in Online, finally spread out to the Offline and even foriegn countries.
 
-[Urban Dictionary](https://www.urbandictionary.com/define.php?term=Humba%20Humba).
+[Humba Humba in Urban Dictionary](https://www.urbandictionary.com/define.php?term=Humba%20Humba).
 
 I just choose this name because of the popularity.
 
