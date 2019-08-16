@@ -7,7 +7,7 @@ const log = console.log;
 // REST API
 /* GET home page. */
 router.get('/', function (req, res_index, next) {
-
+    // Parsing from transfermarktz.com
     var teamPage = ["https://www.transfermarkt.co.uk/manchester-city/startseite/verein/281/saison_id/2019"];
     let playerList = [];
 
@@ -24,16 +24,17 @@ router.get('/', function (req, res_index, next) {
         getHtml()
             .then(html => {
                 const $ = cheerio.load(html.data);
-                var baseUrl = "";
-                const $oddList = $('div.responsive-table').find('tr.odd, tr.even');
+                const teamName = $('div.dataMain').eq(0).find('div.dataName').find('span').text();
+                var baseUrl = "https://www.transfermarkt.co.uk";
+                const $trList = $('div.responsive-table').find('tr.odd, tr.even');
                 // const $evenList = $('div.responsive-table').find('tr.even');
-                var count = $oddList.length;
+                var count = $trList.length;
 
-                $oddList.each(function (i, elem) {
+                $trList.each(function (i, elem) {
                     // console.log(elem);
                     playerList[i] = {
                         name: $(this).find('a.spielprofil_tooltip').attr('title'),
-                        url: $(this).find('a.spielprofil_tooltip').eq(0).attr('href'),
+                        url: baseUrl + $(this).find('a.spielprofil_tooltip').eq(0).attr('href'),
                         number: $(this).find('td.zentriert').children('div.rn_nummer').text(),
                         birth: $(this).children('td.zentriert').eq(1).html(),
                         nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
@@ -42,19 +43,10 @@ router.get('/', function (req, res_index, next) {
                     };
                 });
 
-                // $evenList.each(function (i, elem) {
-                //     // console.log(elem);
-                //     playerList[i + count] = {
-                //         name: $(this).find('a.spielprofil_tooltip').attr('title'),
-                //         url: $(this).find('a.spielprofil_tooltip').eq(0).attr('href'),
-                //         number: $(this).find('td.zentriert').children('div.rn_nummer').text(),
-                //         birth: $(this).children('td.zentriert').eq(1).html(),
-                //         nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
-                //     };
-                // });
-
-
-                const data = playerList.filter(n => n.name);
+                const data = new Object();
+                data.team = teamName;
+                data.player = playerList;
+                // const data = playerList.filter(n => n.name);
                 return data
             })
             .then(res=>res_index.json(res));
