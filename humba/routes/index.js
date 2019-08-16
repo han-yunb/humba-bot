@@ -5,7 +5,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const log = console.log;
 
-var teamPage = ["https://www.transfermarkt.co.uk/manchester-city/startseite/verein/281/saison_id/2019",
+var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/startseite/verein/281/saison_id/2019",
     "https://www.transfermarkt.co.uk/fc-liverpool/startseite/verein/31/saison_id/2019",
     "https://www.transfermarkt.co.uk/tottenham-hotspur/startseite/verein/148/saison_id/2019",
     "https://www.transfermarkt.co.uk/fc-chelsea/startseite/verein/631/saison_id/2019",
@@ -27,11 +27,18 @@ var teamPage = ["https://www.transfermarkt.co.uk/manchester-city/startseite/vere
     "https://www.transfermarkt.co.uk/sheffield-united/startseite/verein/350/saison_id/2019"
 ];
 
-function crawling() {
-    let playerList = [];
+// REST API
+/* GET home page. */
+router.get('/', function (req, res, next) {
+    const promises = [];
+    const subPromises = [];
 
-    for (var i = 0; i < 1; i++) {
-        var page = teamPage[i];
+    var size = eplTeams.length;
+    // Parsing from transfermarktz.com
+    // for (var i = 0; i < size; i++) {
+    promises.push(new Promise(function (resolve, reject) {
+        let playerList = [];
+        var page = eplTeams[0];
         const getHtml = async () => {
             try {
                 return await axios.get(page);
@@ -44,11 +51,9 @@ function crawling() {
             .then(html => {
                 const $ = cheerio.load(html.data);
                 const teamName = $('div.dataMain').eq(0).find('div.dataName').find('span').text();
-                console.log(teamName + " parsing...");
+                console.log("\x1b[36m", teamName + " parsing...");
                 var baseUrl = "https://www.transfermarkt.co.uk";
                 const $trList = $('div.responsive-table').find('tr.odd, tr.even');
-                // const $evenList = $('div.responsive-table').find('tr.even');
-                var count = $trList.length;
 
                 $trList.each(function (i, elem) {
                     // console.log(elem);
@@ -60,69 +65,58 @@ function crawling() {
                         nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
                         position: $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text(),
                         value: ($(this).find('td.hauptlink').text()).split('£')[1],
+                        height: '',
+                        foot: '',
                     };
+
+                    subPromises.push(new Promise(function (resolve, reject) {
+                        const getHtml = async () => {
+                            try {
+                                return await axios.get(playerList[i].url);
+                            } catch (error) {
+                                console.error(error);
+                            }
+                        };
+                        getHtml()
+                            .then(html => {
+                                var d = new Date();
+                                console.log('[' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ']' + playerList[i].name + ' parsing...');
+                                const $ = cheerio.load(html.data);
+                                const tr = $('div.spielerdaten').children('table.auflistung').find('tr');
+                                var height = '';
+                                var foot = '';
+                                if (tr.eq(4).children('th').text() == 'Height:') {
+                                    height = tr.eq(4).children('td').text();
+                                    if (tr.eq(7).children('th').text() == 'Foot:') {
+                                        foot = tr.eq(7).children('td').text();
+                                    }
+                                } else {
+                                    height = tr.eq(3).children('td').text();
+                                    if (tr.eq(6).children('th').text() == 'Foot:') {
+                                        foot = tr.eq(6).children('td').text();
+                                    }
+                                }
+                                // console.log("height" + height + ", foot: " + foot);
+                                playerList[i].height = height;
+                                playerList[i].foot = foot;
+                                // return data;
+                            });
+                    }));
                 });
 
-                const data = new Object();
-                data.team = teamName;
-                data.player = playerList;
-                // const data = playerList.filter(n => n.name);
-                return data
-            })
-            .then(res => res_index.json(res));
-    }
-}
-
-// REST API
-/* GET home page. */
-router.get('/', function (req, res, next) {
-    const promises = [];
-
-    // Parsing from transfermarktz.com
-    for (var i = 0; i < teamPage.length; i++) {
-        promises.push(new Promise(function (resolve, reject) {
-            let playerList = [];
-            var page = teamPage[i];
-            const getHtml = async () => {
-                try {
-                    return await axios.get(page);
-                } catch (error) {
-                    console.error(error);
-                }
-            };
-
-            getHtml()
-                .then(html => {
-                    const $ = cheerio.load(html.data);
-                    const teamName = $('div.dataMain').eq(0).find('div.dataName').find('span').text();
-                    console.log(teamName + " parsing...");
-                    var baseUrl = "https://www.transfermarkt.co.uk";
-                    const $trList = $('div.responsive-table').find('tr.odd, tr.even');
-
-                    $trList.each(function (i, elem) {
-                        // console.log(elem);
-                        playerList[i] = {
-                            name: $(this).find('a.spielprofil_tooltip').attr('title'),
-                            url: baseUrl + $(this).find('a.spielprofil_tooltip').eq(0).attr('href'),
-                            number: $(this).find('td.zentriert').children('div.rn_nummer').text(),
-                            birth: $(this).children('td.zentriert').eq(1).html(),
-                            nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
-                            position: $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text(),
-                            value: ($(this).find('td.hauptlink').text()).split('£')[1],
-                        };
-                    });
-                    const data = new Object();
+                setTimeout(function () {
+                    var data = new Object();
                     data.team = teamName;
                     data.player = playerList;
                     // const data = playerList.filter(n => n.name);
                     console.log(teamName + " parsing complete!");
                     resolve(data);
-                });
-        }));
-    }
+                }, 20000);
+            });
+    }));
+    // }
 
     Promise.all(promises).then(function (values) {
-        console.log("complete all promises!");
         res.json(values);
     });
 
