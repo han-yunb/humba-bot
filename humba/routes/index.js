@@ -5,27 +5,11 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 const log = console.log;
 
-var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/startseite/verein/281/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-liverpool/startseite/verein/31/saison_id/2019",
-    "https://www.transfermarkt.co.uk/tottenham-hotspur/startseite/verein/148/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-chelsea/startseite/verein/631/saison_id/2019",
-    "https://www.transfermarkt.co.uk/manchester-united/startseite/verein/985/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-arsenal/startseite/verein/11/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-everton/startseite/verein/29/saison_id/2019",
-    "https://www.transfermarkt.co.uk/leicester-city/startseite/verein/1003/saison_id/2019",
-    "https://www.transfermarkt.co.uk/west-ham-united/startseite/verein/379/saison_id/2019",
-    "https://www.transfermarkt.co.uk/afc-bournemouth/startseite/verein/989/saison_id/2019",
-    "https://www.transfermarkt.co.uk/wolverhampton-wanderers/startseite/verein/543/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-southampton/startseite/verein/180/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-watford/startseite/verein/1010/saison_id/2019",
-    "https://www.transfermarkt.co.uk/newcastle-united/startseite/verein/762/saison_id/2019",
-    "https://www.transfermarkt.co.uk/crystal-palace/startseite/verein/873/saison_id/2019",
-    "https://www.transfermarkt.co.uk/brighton-amp-hove-albion/startseite/verein/1237/saison_id/2019",
-    "https://www.transfermarkt.co.uk/fc-burnley/startseite/verein/1132/saison_id/2019",
-    "https://www.transfermarkt.co.uk/aston-villa/startseite/verein/405/saison_id/2019",
-    "https://www.transfermarkt.co.uk/norwich-city/startseite/verein/1123/saison_id/2019",
-    "https://www.transfermarkt.co.uk/sheffield-united/startseite/verein/350/saison_id/2019"
-];
+var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1", ];
+
+var eplPlayers = ["https://www.transfermarkt.co.uk/manchester-city/leistungsdaten/verein/281/reldata/GB1%262019/plus/1", ];
+
+var eplTeamColors = ["\x1b[36m", ];
 
 // REST API
 /* GET home page. */
@@ -33,15 +17,12 @@ router.get('/', function (req, res, next) {
     const promises = [];
     const subPromises = [];
 
-    var size = eplTeams.length;
     // Parsing from transfermarktz.com
-    // for (var i = 0; i < size; i++) {
     promises.push(new Promise(function (resolve, reject) {
         let playerList = [];
-        var page = eplTeams[0];
         const getHtml = async () => {
             try {
-                return await axios.get(page);
+                return await axios.get(eplTeams[0]);
             } catch (error) {
                 console.error(error);
             }
@@ -51,58 +32,61 @@ router.get('/', function (req, res, next) {
             .then(html => {
                 const $ = cheerio.load(html.data);
                 const teamName = $('div.dataMain').eq(0).find('div.dataName').find('span').text();
-                console.log("\x1b[36m", teamName + " parsing...");
-                var baseUrl = "https://www.transfermarkt.co.uk";
+                console.log(eplTeamColors[0], teamName + " parsing...");
                 const $trList = $('div.responsive-table').find('tr.odd, tr.even');
 
                 $trList.each(function (i, elem) {
                     // console.log(elem);
                     playerList[i] = {
-                        name: $(this).find('a.spielprofil_tooltip').attr('title'),
-                        url: baseUrl + $(this).find('a.spielprofil_tooltip').eq(0).attr('href'),
-                        number: $(this).find('td.zentriert').children('div.rn_nummer').text(),
+                        name: $(this).find('a.spielprofil_tooltip').eq(0).text(),
+                        position: $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text(),
+                        number: $(this).find('div.rn_nummer').text(),
                         birth: $(this).children('td.zentriert').eq(1).html(),
                         nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
-                        position: $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text(),
+                        height: $(this).find('td.zentriert').eq(3).text(),
+                        foot: $(this).find('td.zentriert').eq(4).text(),
                         value: ($(this).find('td.hauptlink').text()).split('£')[1],
-                        height: '',
-                        foot: '',
+                        appearances: '',
+                        goals: '',
+                        assists: '',
+                        yellows: '',
+                        double_yellows: '',
+                        reds: '',
+                        minutes: '',
                     };
+                });
 
-                    subPromises.push(new Promise(function (resolve, reject) {
-                        const getHtml = async () => {
-                            try {
-                                return await axios.get(playerList[i].url);
-                            } catch (error) {
-                                console.error(error);
-                            }
-                        };
-                        getHtml()
-                            .then(html => {
-                                var d = new Date();
-                                console.log('[' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ']' + playerList[i].name + ' parsing...');
-                                const $ = cheerio.load(html.data);
-                                const tr = $('div.spielerdaten').children('table.auflistung').find('tr');
-                                var height = '';
-                                var foot = '';
-                                if (tr.eq(4).children('th').text() == 'Height:') {
-                                    height = tr.eq(4).children('td').text();
-                                    if (tr.eq(7).children('th').text() == 'Foot:') {
-                                        foot = tr.eq(7).children('td').text();
-                                    }
-                                } else {
-                                    height = tr.eq(3).children('td').text();
-                                    if (tr.eq(6).children('th').text() == 'Foot:') {
-                                        foot = tr.eq(6).children('td').text();
+                promises.push(new Promise(function (resolve, reject) {
+                    const getHtml = async () => {
+                        try {
+                            return await axios.get(eplPlayers[0]);
+                        } catch (error) {
+                            console.error(error);
+                        }
+                    };
+                    getHtml()
+                        .then(html => {
+                            var $ = cheerio.load(html.data);
+                            const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
+                            $trListStat.each(function (j, elem) {
+                                var playerName = $(this).find('a.spielprofil_tooltip').eq(0).text();
+                                console.log(playerName + ' parsing...');
+                                for (var k = 0; k < playerList.length; k++) {
+                                    if (playerList[k].name == playerName) {
+                                        const playerStat = $trListStat.eq(j);
+                                        playerList[k].appearances = playerStat.find('td.zentriert').eq(4).text();
+                                        playerList[k].goals = playerStat.find('td.zentriert').eq(5).text();
+                                        playerList[k].assists = playerStat.find('td.zentriert').eq(6).text();
+                                        playerList[k].yellows = playerStat.find('td.zentriert').eq(7).text();
+                                        playerList[k].double_yellows = playerStat.find('td.zentriert').eq(8).text();
+                                        playerList[k].reds = playerStat.find('td.zentriert').eq(9).text();
+                                        playerList[k].minutes = playerStat.find('td.rechts').eq(0).text();
+                                        break;
                                     }
                                 }
-                                // console.log("height" + height + ", foot: " + foot);
-                                playerList[i].height = height;
-                                playerList[i].foot = foot;
-                                // return data;
                             });
-                    }));
-                });
+                        });
+                }));
 
                 setTimeout(function () {
                     var data = new Object();
@@ -111,7 +95,7 @@ router.get('/', function (req, res, next) {
                     // const data = playerList.filter(n => n.name);
                     console.log(teamName + " parsing complete!");
                     resolve(data);
-                }, 20000);
+                }, 15000);
             });
     }));
     // }
@@ -119,42 +103,6 @@ router.get('/', function (req, res, next) {
     Promise.all(promises).then(function (values) {
         res.json(values);
     });
-
-});
-
-router.get('/specific', function (req, res, next) {
-    var playerList = [];
-    for (var i = 0; i < playerList.length; i++) {
-        var page = playerList[i].url;
-        const getHtml = async () => {
-            try {
-                return await axios.get(page);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        getHtml()
-            .then(html => {
-                console.log(playerList[i].name + ' specific parsing...');
-                const $ = cheerio.load(html.data);
-                const tr = $('div.spielerdaten').children('table.auflistung').find('tr');
-                var height = '';
-                var foot = '';
-                if (tr.eq(4).children('th').text() == 'Height:') {
-                    height = tr.eq(4).children('td').text();
-                    foot = tr.eq(7).children('td').text();
-                } else {
-                    height = tr.eq(3).children('td').text();
-                    foot = tr.eq(6).children('td').text();
-                }
-                // console.log("height" + height + ", foot: " + foot);
-                playerList[i].height = height;
-                playerList[i].foot = foot;
-                // return data;
-            })
-            .then(res => res_index.json(res));
-    }
 });
 
 // Get Team Ranking API
