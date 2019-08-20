@@ -36,5 +36,12 @@ I just choose this name because of the popularity.
 
 Everyone knows Humba who likes EPL in South Korea ;)
 
+### Dev history
+Date | Function | Details
+------------ | ------------- | -------------
+19.08.16 | REST API | Set API formats.
+19.08.19 | Crawling | Set basic crawling functions.
+19.08.21 | MySQL | Connect DB and sync with parsed data.
+
 ### Contact
 hanorang2@gmail.com
