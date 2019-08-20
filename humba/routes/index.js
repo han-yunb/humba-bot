@@ -319,12 +319,37 @@ router.get('/player', function (req, res, next) {
 
 // Get Team Ranking API
 router.get('/team_rank', function (req, res, next) {
-
+    var teamRankQuery = 'select * from humba.teams order by points desc, GD desc, GF desc, team;';
+    db.query(teamRankQuery, function(err, results){
+        if(err){
+            console.log(err);
+        }else{
+            res.render('team',{
+                result: results,
+            });
+            // res.json(results);
+        }
+    });
 });
 
 // Get Player Ranking API
 router.get('/player_rank', function (req, res, next) {
-
+    var type = req.query.type;
+    var playerRankQuery = ''
+    if(type == 'goal'){
+        playerRankQuery = 'select * from humba.players order by goals desc, team limit 20;';
+    }else if(type == 'assist'){
+        playerRankQuery = 'select * from humba.players order by assists desc, team limit 20;';
+    }
+    db.query(playerRankQuery, function(err, results){
+        if(err){
+            console.log(err);
+        }else{
+            res.render('player',{
+                result:results,
+            });
+        }
+    });
 });
 
 // Get Schedule API
