@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 const axios = require("axios");
 const cheerio = require("cheerio");
-var colors = require('colors/safe');
 
 var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1",
     "https://www.transfermarkt.co.uk/liverpool-fc/kader/verein/31/saison_id/2019/plus/1",
@@ -64,10 +63,10 @@ var eplTeamColors = ["\x1b[36m",
     "\x1b[40m",
     "\x1b[46m",
     "\x1b[44m",
-    "\x1b[41m",
+    "\x1b[46m",
     "\x1b[31m",
     "\x1b[33m",
-    "\x1b[31m",
+    "\x1b[41m",
 ];
 
 // REST API
