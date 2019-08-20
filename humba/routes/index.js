@@ -73,7 +73,7 @@ var eplTeamColors = ["\x1b[36m",
 // REST API
 router.get('/', function (req, res, next) {
     var msg = 'on development!';
-    res.render('index',{
+    res.render('index', {
         msg: msg,
     });
 });
@@ -82,7 +82,7 @@ router.get('/', function (req, res, next) {
 router.get('/database', function (req, res, next) {
     var query = parseInt(req.query.team);
     const promises = [];
-    var playerCount = query*100;
+    var playerCount = query * 100;
 
     // Parsing from transfermarktz.com
     promises.push(new Promise(function (resolve, reject) {
@@ -148,27 +148,27 @@ router.get('/database', function (req, res, next) {
                                 console.log(eplTeamColors[query], playerName + ' parsing...');
                                 for (var k = 0; k < playerList.length; k++) {
                                     if (playerList[k].name == playerName) {
-                                        const playerStat = $trListStat.eq(j);
-                                        playerList[k].appearances = playerStat.find('td.zentriert').eq(4).text();
-                                        playerList[k].goals = playerStat.find('td.zentriert').eq(5).text();
-                                        playerList[k].assists = playerStat.find('td.zentriert').eq(6).text();
-                                        playerList[k].yellows = playerStat.find('td.zentriert').eq(7).text();
-                                        playerList[k].double_yellows = playerStat.find('td.zentriert').eq(8).text();
-                                        playerList[k].reds = playerStat.find('td.zentriert').eq(9).text();
-                                        playerList[k].minutes = playerStat.find('td.rechts').eq(0).text();
+                                        const ps = $trListStat.eq(j);
+                                        playerList[k].appearances = ps.find('td.zentriert').eq(4).text();
+                                        playerList[k].goals = ps.find('td.zentriert').eq(5).text();
+                                        playerList[k].assists = ps.find('td.zentriert').eq(6).text();
+                                        playerList[k].yellows = ps.find('td.zentriert').eq(7).text();
+                                        playerList[k].double_yellows = ps.find('td.zentriert').eq(8).text();
+                                        playerList[k].reds = ps.find('td.zentriert').eq(9).text();
+                                        playerList[k].minutes = ps.find('td.rechts').eq(0).text();
 
                                         var cp = playerList[k];
                                         promises.push(new Promise(function (resolve, reject) {
                                             var insertQuery = 'insert into humba.players values(' +
-                                            `${playerCount},${query},"${cp.name}","${cp.position}","${cp.number}","${cp.birth}",` +
-                                            `"${cp.nation}","${cp.height}","${cp.foot}","${cp.value}","${cp.appearances}","${cp.goals}",` +
-                                            `"${cp.assists}","${cp.yellows}","${cp.double_yellows}","${cp.reds}","${cp.minutes}"` +
-                                            ')';
+                                                `${playerCount},${query},"${cp.name}","${cp.position}","${cp.number}","${cp.birth}",` +
+                                                `"${cp.nation}","${cp.height}","${cp.foot}","${cp.value}","${cp.appearances}","${cp.goals}",` +
+                                                `"${cp.assists}","${cp.yellows}","${cp.double_yellows}","${cp.reds}","${cp.minutes}"` +
+                                                ')';
                                             // console.log(insertQuery);
-                                            db.query(insertQuery, function(err, results){
-                                                if(err){
+                                            db.query(insertQuery, function (err, results) {
+                                                if (err) {
                                                     console.log(err);
-                                                }else{
+                                                } else {
                                                     // console.log(results);
                                                 }
                                             });
@@ -219,7 +219,7 @@ router.get('/team', function (req, res, next) {
                 const $trList = $('div.responsive-table').find('tr');
 
                 $trList.each(function (i, elem) {
-                    if(i!=0){
+                    if (i != 0) {
                         teamList[i] = {
                             team: $(this).find('td.no-border-links').children('a').text(),
                             played: $(this).find('td.zentriert').eq(1).text(),
@@ -233,14 +233,14 @@ router.get('/team', function (req, res, next) {
                         };
 
                         promises.push(new Promise(function (resolve, reject) {
-                            var updateQuery = 'update humba.teams ' +
-                            `set team=\"${teamList[i].team}\", played=${teamList[i].played}, won=${teamList[i].won}, draw=${teamList[i].draw}, ` +
-                            `loss=${teamList[i].loss}, GF=${teamList[i].GF}, GA=${teamList[i].GA}, GD=${teamList[i].GD}, points=${teamList[i].points} ` +
-                            `where id=${i};`;
-                            db.query(updateQuery, function(err, results){
-                                if(err){
+                            var updateTeamQuery = 'update humba.teams ' +
+                                `set team=\"${teamList[i].team}\", played=${teamList[i].played}, won=${teamList[i].won}, draw=${teamList[i].draw}, ` +
+                                `loss=${teamList[i].loss}, GF=${teamList[i].GF}, GA=${teamList[i].GA}, GD=${teamList[i].GD}, points=${teamList[i].points} ` +
+                                `where id=${i};`;
+                            db.query(updateTeamQuery, function (err, results) {
+                                if (err) {
                                     console.log(err);
-                                }else{
+                                } else {
                                     // console.log(results);
                                 }
                             });
@@ -254,8 +254,8 @@ router.get('/team', function (req, res, next) {
     }));
 
     Promise.all(promises).then(function (values) {
-        var msg = 'complete rank update!';
-        res.render('index',{
+        var msg = 'complete team rank update!';
+        res.render('index', {
             msg: msg,
         });
     });
@@ -263,11 +263,11 @@ router.get('/team', function (req, res, next) {
 
 // Update Player Information
 router.get('/player', function (req, res, next) {
-    var query = parseInt(req.query.team);const promises = [];
+    var query = parseInt(req.query.team);
+    const promises = [];
 
     // Parsing from transfermarktz.com
     promises.push(new Promise(function (resolve, reject) {
-        let playerList = [];
         const getHtml = async () => {
             try {
                 return await axios.get(eplPlayers[query]);
@@ -278,56 +278,42 @@ router.get('/player', function (req, res, next) {
 
         getHtml()
             .then(html => {
-                var $ = cheerio.load(html.data);
-                const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
+                var $ = cheerio.load(html.data);const
+                $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
                 $trListStat.each(function (j, elem) {
-                    var playerName = $(this).find('a.spielprofil_tooltip').eq(0).text();
-                    for (var k = 0; k < playerList.length; k++) {
-                        if (playerList[k].name == playerName) {
-                            const playerStat = $trListStat.eq(j);
-                            playerList[k].appearances = playerStat.find('td.zentriert').eq(4).text();
-                            playerList[k].goals = playerStat.find('td.zentriert').eq(5).text();
-                            playerList[k].assists = playerStat.find('td.zentriert').eq(6).text();
-                            playerList[k].yellows = playerStat.find('td.zentriert').eq(7).text();
-                            playerList[k].double_yellows = playerStat.find('td.zentriert').eq(8).text();
-                            playerList[k].reds = playerStat.find('td.zentriert').eq(9).text();
-                            playerList[k].minutes = playerStat.find('td.rechts').eq(0).text();
-                            break;
-                        }
-                    }
-                });
+                    var name = $(this).find('a.spielprofil_tooltip').eq(0).text();
+                    console.log(name + " data updating...");
+                    const ps = $trListStat.eq(j);
+                    var appearances = ps.find('td.zentriert').eq(4).text();
+                    var goals = ps.find('td.zentriert').eq(5).text();
+                    var assists = ps.find('td.zentriert').eq(6).text();
+                    var yellows = ps.find('td.zentriert').eq(7).text();
+                    var double_yellows = ps.find('td.zentriert').eq(8).text();
+                    var reds = ps.find('td.zentriert').eq(9).text();
+                    var minutes = ps.find('td.rechts').eq(0).text();
 
-                promises.push(new Promise(function (resolve, reject) {
-                    const getHtml = async () => {
-                        try {
-                            return await axios.get(eplPlayers[query]);
-                        } catch (error) {
-                            console.error(error);
-                        }
-                    };
-                    getHtml()
-                        .then(html => {
+                    promises.push(new Promise(function (resolve, reject) {
+                        var updatePlayerQuery = 'update humba.players ' +
+                            `set appearances="${appearances}", goals="${goals}", assists="${assists}", yellows="${yellows}",` +
+                            `double_yellows="${double_yellows}", reds="${reds}", minutes="${minutes}" ` +
+                            `where name="${name}";`;
+                        db.query(updatePlayerQuery, function (err, results) {
+                            if (err) {
+                                console.log(err);
+                            } else {
+                            }
                         });
-                }));
-
-                setTimeout(function () {
-                    var data = new Object();
-                    data.team = teamName;
-                    data.player = playerList;
-                    // const data = playerList.filter(n => n.name);
-                    console.log(eplTeamColors[query], teamName + " parsing complete!");
-                    resolve(data);
-                }, 15000);
+                    }));
+                });
+                resolve(true);
             });
     }));
 
-    var getPlayersInfoQuery = 'select * from players;';
-    db.query(getPlayersInfoQuery, function (err, results) {
-        if (err) {
-            console.log(err);
-        } else {
-            res.json(results);
-        }
+    Promise.all(promises).then(function (values) {
+        var msg = 'complete player rank update!';
+        res.render('index', {
+            msg: msg,
+        });
     });
 });
 
