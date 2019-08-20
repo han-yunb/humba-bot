@@ -72,7 +72,7 @@ var eplTeamColors = ["\x1b[36m",
 
 // REST API
 router.get('/', function (req, res, next) {
-    var msg = '개발중!';
+    var msg = 'on development!';
     res.render('index',{
         msg: msg,
     });
@@ -82,6 +82,7 @@ router.get('/', function (req, res, next) {
 router.get('/database', function (req, res, next) {
     var query = parseInt(req.query.team);
     const promises = [];
+    var playerCount = query*100;
 
     // Parsing from transfermarktz.com
     promises.push(new Promise(function (resolve, reject) {
@@ -104,22 +105,30 @@ router.get('/database', function (req, res, next) {
                 $trList.each(function (i, elem) {
                     // console.log(elem);
                     playerList[i] = {
-                        name: $(this).find('a.spielprofil_tooltip').eq(0).text(),
-                        position: $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text(),
-                        number: $(this).find('div.rn_nummer').text(),
-                        birth: $(this).children('td.zentriert').eq(1).html(),
-                        nation: $(this).find('td.zentriert').eq(2).children('img').attr('title'),
-                        height: $(this).find('td.zentriert').eq(3).text(),
-                        foot: $(this).find('td.zentriert').eq(4).text(),
-                        value: ($(this).find('td.hauptlink').text()).split('£')[1],
-                        appearances: '',
-                        goals: '',
-                        assists: '',
-                        yellows: '',
-                        double_yellows: '',
-                        reds: '',
+                        name: '',
+                        position: '',
+                        number: -1,
+                        birth: '',
+                        nation: '',
+                        height: '',
+                        foot: '',
+                        value: '',
+                        appearances: 0,
+                        goals: 0,
+                        assists: 0,
+                        yellows: 0,
+                        double_yellows: 0,
+                        reds: 0,
                         minutes: '',
                     };
+                    playerList[i].name = $(this).find('a.spielprofil_tooltip').eq(0).text();
+                    playerList[i].position = $(this).find('td.posrela').eq(0).find('tr').eq(1).children('td').text();
+                    playerList[i].number = $(this).find('div.rn_nummer').text();
+                    playerList[i].birth = $(this).children('td.zentriert').eq(1).html();
+                    playerList[i].nation = $(this).find('td.zentriert').eq(2).children('img').attr('title');
+                    playerList[i].height = $(this).find('td.zentriert').eq(3).text();
+                    playerList[i].foot = $(this).find('td.zentriert').eq(4).text();
+                    playerList[i].value = ($(this).find('td.hauptlink').text()).split('£')[1];
                 });
 
                 promises.push(new Promise(function (resolve, reject) {
@@ -147,9 +156,27 @@ router.get('/database', function (req, res, next) {
                                         playerList[k].double_yellows = playerStat.find('td.zentriert').eq(8).text();
                                         playerList[k].reds = playerStat.find('td.zentriert').eq(9).text();
                                         playerList[k].minutes = playerStat.find('td.rechts').eq(0).text();
+
+                                        var cp = playerList[k];
+                                        promises.push(new Promise(function (resolve, reject) {
+                                            var insertQuery = 'insert into humba.players values(' +
+                                            `${playerCount},${query},"${cp.name}","${cp.position}","${cp.number}","${cp.birth}",` +
+                                            `"${cp.nation}","${cp.height}","${cp.foot}","${cp.value}","${cp.appearances}","${cp.goals}",` +
+                                            `"${cp.assists}","${cp.yellows}","${cp.double_yellows}","${cp.reds}","${cp.minutes}"` +
+                                            ')';
+                                            // console.log(insertQuery);
+                                            db.query(insertQuery, function(err, results){
+                                                if(err){
+                                                    console.log(err);
+                                                }else{
+                                                    // console.log(results);
+                                                }
+                                            });
+                                        }));
                                         break;
                                     }
                                 }
+                                playerCount++;
                             });
                         });
                 }));
@@ -227,24 +254,73 @@ router.get('/team', function (req, res, next) {
     }));
 
     Promise.all(promises).then(function (values) {
-        var msg = '순위 업데이트 완료';
+        var msg = 'complete rank update!';
         res.render('index',{
             msg: msg,
         });
     });
-
-    // var getTeamsInfoQuery = 'select * from teams;';
-    // db.query(getTeamsInfoQuery, function (err, results) {
-    //     if (err) {
-    //         console.log(err);
-    //     } else {
-    //         res.json(results);
-    //     }
-    // });
 });
 
 // Update Player Information
 router.get('/player', function (req, res, next) {
+    var query = parseInt(req.query.team);const promises = [];
+
+    // Parsing from transfermarktz.com
+    promises.push(new Promise(function (resolve, reject) {
+        let playerList = [];
+        const getHtml = async () => {
+            try {
+                return await axios.get(eplPlayers[query]);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        getHtml()
+            .then(html => {
+                var $ = cheerio.load(html.data);
+                const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
+                $trListStat.each(function (j, elem) {
+                    var playerName = $(this).find('a.spielprofil_tooltip').eq(0).text();
+                    for (var k = 0; k < playerList.length; k++) {
+                        if (playerList[k].name == playerName) {
+                            const playerStat = $trListStat.eq(j);
+                            playerList[k].appearances = playerStat.find('td.zentriert').eq(4).text();
+                            playerList[k].goals = playerStat.find('td.zentriert').eq(5).text();
+                            playerList[k].assists = playerStat.find('td.zentriert').eq(6).text();
+                            playerList[k].yellows = playerStat.find('td.zentriert').eq(7).text();
+                            playerList[k].double_yellows = playerStat.find('td.zentriert').eq(8).text();
+                            playerList[k].reds = playerStat.find('td.zentriert').eq(9).text();
+                            playerList[k].minutes = playerStat.find('td.rechts').eq(0).text();
+                            break;
+                        }
+                    }
+                });
+
+                promises.push(new Promise(function (resolve, reject) {
+                    const getHtml = async () => {
+                        try {
+                            return await axios.get(eplPlayers[query]);
+                        } catch (error) {
+                            console.error(error);
+                        }
+                    };
+                    getHtml()
+                        .then(html => {
+                        });
+                }));
+
+                setTimeout(function () {
+                    var data = new Object();
+                    data.team = teamName;
+                    data.player = playerList;
+                    // const data = playerList.filter(n => n.name);
+                    console.log(eplTeamColors[query], teamName + " parsing complete!");
+                    resolve(data);
+                }, 15000);
+            });
+    }));
+
     var getPlayersInfoQuery = 'select * from players;';
     db.query(getPlayersInfoQuery, function (err, results) {
         if (err) {
