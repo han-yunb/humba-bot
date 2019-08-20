@@ -1,7 +1,8 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 const axios = require("axios");
 const cheerio = require("cheerio");
+const db = require('../public/javascripts/lib/db');
 
 var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1",
     "https://www.transfermarkt.co.uk/liverpool-fc/kader/verein/31/saison_id/2019/plus/1",
@@ -71,7 +72,10 @@ var eplTeamColors = ["\x1b[36m",
 
 // REST API
 router.get('/', function (req, res, next) {
-
+    var msg = '개발중!';
+    res.render('index',{
+        msg: msg,
+    });
 });
 
 /* GET data crawling. */
@@ -167,6 +171,90 @@ router.get('/database', function (req, res, next) {
     });
 });
 
+// Update Team Information
+router.get('/team', function (req, res, next) {
+    var rankPage = "https://www.transfermarkt.co.uk/premier-league/tabelle/wettbewerb/GB1/saison_id/2019";
+    const promises = [];
+
+    promises.push(new Promise(function (resolve, reject) {
+        let teamList = [];
+        const getHtml = async () => {
+            try {
+                return await axios.get(rankPage);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        getHtml()
+            .then(html => {
+                const $ = cheerio.load(html.data);
+                const $trList = $('div.responsive-table').find('tr');
+
+                $trList.each(function (i, elem) {
+                    if(i!=0){
+                        teamList[i] = {
+                            team: $(this).find('td.no-border-links').children('a').text(),
+                            played: $(this).find('td.zentriert').eq(1).text(),
+                            won: $(this).find('td.zentriert').eq(2).text(),
+                            draw: $(this).find('td.zentriert').eq(3).text(),
+                            loss: $(this).find('td.zentriert').eq(4).text(),
+                            GF: ($(this).find('td.zentriert').eq(5).text()).split(':')[0],
+                            GA: ($(this).find('td.zentriert').eq(5).text()).split(':')[1],
+                            GD: $(this).find('td.zentriert').eq(6).text(),
+                            points: $(this).find('td.zentriert').eq(7).text(),
+                        };
+
+                        promises.push(new Promise(function (resolve, reject) {
+                            var updateQuery = 'update humba.teams ' +
+                            `set team=\"${teamList[i].team}\", played=${teamList[i].played}, won=${teamList[i].won}, draw=${teamList[i].draw}, ` +
+                            `loss=${teamList[i].loss}, GF=${teamList[i].GF}, GA=${teamList[i].GA}, GD=${teamList[i].GD}, points=${teamList[i].points} ` +
+                            `where id=${i};`;
+                            db.query(updateQuery, function(err, results){
+                                if(err){
+                                    console.log(err);
+                                }else{
+                                    // console.log(results);
+                                }
+                            });
+                        }));
+                    }
+                });
+                var data = new Object();
+                data.teams = teamList;
+                resolve(data);
+            });
+    }));
+
+    Promise.all(promises).then(function (values) {
+        var msg = '순위 업데이트 완료';
+        res.render('index',{
+            msg: msg,
+        });
+    });
+
+    // var getTeamsInfoQuery = 'select * from teams;';
+    // db.query(getTeamsInfoQuery, function (err, results) {
+    //     if (err) {
+    //         console.log(err);
+    //     } else {
+    //         res.json(results);
+    //     }
+    // });
+});
+
+// Update Player Information
+router.get('/player', function (req, res, next) {
+    var getPlayersInfoQuery = 'select * from players;';
+    db.query(getPlayersInfoQuery, function (err, results) {
+        if (err) {
+            console.log(err);
+        } else {
+            res.json(results);
+        }
+    });
+});
+
 // Get Team Ranking API
 router.get('/team_rank', function (req, res, next) {
 
@@ -184,16 +272,6 @@ router.get('/schedule', function (req, res, next) {
 
 // Get Formation API
 router.get('/formation', function (req, res, next) {
-
-});
-
-// Get Team Information API
-router.get('/team', function (req, res, next) {
-
-});
-
-// Get Player Information API
-router.get('/player', function (req, res, next) {
 
 });
 
