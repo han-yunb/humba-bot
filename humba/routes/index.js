@@ -324,8 +324,9 @@ router.get('/team_rank', function (req, res, next) {
         if(err){
             console.log(err);
         }else{
-            res.render('team',{
-                result: results,
+            console.log(results);
+            res.render('index', {
+                msg: results,
             });
             // res.json(results);
         }
@@ -345,9 +346,7 @@ router.get('/player_rank', function (req, res, next) {
         if(err){
             console.log(err);
         }else{
-            res.render('player',{
-                result:results,
-            });
+            res.json(results);
         }
     });
 });
