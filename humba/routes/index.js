@@ -2,73 +2,19 @@ const express = require('express');
 const router = express.Router();
 const axios = require("axios");
 const cheerio = require("cheerio");
+const fs = require('fs');
 const db = require('../public/javascripts/lib/db');
 const kp = require('../public/javascripts/lib/koreanPatch');
 
-var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/liverpool-fc/kader/verein/31/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/tottenham-hotspur/kader/verein/148/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/chelsea-fc/kader/verein/631/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/manchester-united/kader/verein/985/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/arsenal-fc/kader/verein/11/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/everton-fc/kader/verein/29/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/leicester-city/kader/verein/1003/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/west-ham-united/kader/verein/379/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/afc-bournemouth/kader/verein/989/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/wolverhampton-wanderers/kader/verein/543/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-southampton/kader/verein/180/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-watford/kader/verein/1010/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/newcastle-united/kader/verein/762/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/crystal-palace/kader/verein/873/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/brighton-amp-hove-albion/kader/verein/1237/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-burnley/kader/verein/1132/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/aston-villa/kader/verein/405/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/norwich-city/kader/verein/1123/saison_id/2019/plus/1",
-  "https://www.transfermarkt.co.uk/sheffield-united/kader/verein/350/saison_id/2019/plus/1",
-];
+var textTeams = fs.readFileSync("./public/data/teams.txt", 'utf-8');
+var eplTeams = textTeams.split("\n");
 
-var eplPlayers = ["https://www.transfermarkt.co.uk/manchester-city/leistungsdaten/verein/281/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/liverpool-fc/leistungsdaten/verein/31/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/tottenham-hotspur/leistungsdaten/verein/148/plus/1?reldata=GB1%262019",
-  "https://www.transfermarkt.co.uk/chelsea-fc/leistungsdaten/verein/631/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/manchester-united/leistungsdaten/verein/985/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/arsenal-fc/leistungsdaten/verein/11/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/everton-fc/leistungsdaten/verein/29/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/leicester-city/leistungsdaten/verein/1003/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/west-ham-united/leistungsdaten/verein/379/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/afc-bournemouth/leistungsdaten/verein/989/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/wolverhampton-wanderers/leistungsdaten/verein/543/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-southampton/leistungsdaten/verein/180/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-watford/leistungsdaten/verein/1010/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/newcastle-united/leistungsdaten/verein/762/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/crystal-palace/leistungsdaten/verein/873/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/brighton-amp-hove-albion/leistungsdaten/verein/1237/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/fc-burnley/leistungsdaten/verein/1132/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/aston-villa/leistungsdaten/verein/405/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/norwich-city/leistungsdaten/verein/1123/reldata/GB1%262019/plus/1",
-  "https://www.transfermarkt.co.uk/sheffield-united/leistungsdaten/verein/350/reldata/GB1%262019/plus/1",
-];
+var textPlayers = fs.readFileSync("./public/data/players.txt", 'utf-8');
+var eplPlayers = textPlayers.split("\n");
 
-var eplTeamColors = ["\x1b[36m",
-  "\x1b[31m",
-  "\x1b[37m",
-  "\x1b[34m",
-  "\x1b[31m",
-  "\x1b[31m",
-  "\x1b[34m",
-  "\x1b[34m",
-  "\x1b[36m",
-  "\x1b[40m",
-  "\x1b[33m",
-  "\x1b[31m",
-  "\x1b[33m",
-  "\x1b[40m",
-  "\x1b[46m",
-  "\x1b[44m",
-  "\x1b[46m",
-  "\x1b[31m",
-  "\x1b[33m",
-  "\x1b[41m",
+var eplTeamColors = ["\x1b[36m", "\x1b[31m", "\x1b[37m", "\x1b[34m", "\x1b[31m", "\x1b[31m",
+  "\x1b[34m", "\x1b[34m", "\x1b[36m", "\x1b[40m", "\x1b[33m", "\x1b[31m", "\x1b[33m", "\x1b[40m",
+  "\x1b[46m", "\x1b[44m", "\x1b[46m", "\x1b[31m", "\x1b[33m", "\x1b[41m",
 ];
 
 // REST API
