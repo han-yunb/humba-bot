@@ -6,14 +6,52 @@ const fs = require('fs');
 const db = require('../public/javascripts/lib/db');
 const kp = require('../public/javascripts/lib/koreanPatch');
 
-var textTeams = fs.readFileSync("./public/data/teams.txt", 'utf-8');
-var eplTeams = textTeams.split("\n");
+var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/liverpool-fc/kader/verein/31/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/tottenham-hotspur/kader/verein/148/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/chelsea-fc/kader/verein/631/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/manchester-united/kader/verein/985/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/arsenal-fc/kader/verein/11/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/everton-fc/kader/verein/29/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/leicester-city/kader/verein/1003/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/west-ham-united/kader/verein/379/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/afc-bournemouth/kader/verein/989/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/wolverhampton-wanderers/kader/verein/543/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/fc-southampton/kader/verein/180/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/fc-watford/kader/verein/1010/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/newcastle-united/kader/verein/762/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/crystal-palace/kader/verein/873/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/brighton-amp-hove-albion/kader/verein/1237/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/fc-burnley/kader/verein/1132/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/aston-villa/kader/verein/405/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/norwich-city/kader/verein/1123/saison_id/2019/plus/1",
+"https://www.transfermarkt.co.uk/sheffield-united/kader/verein/350/saison_id/2019/plus/1",
+];
 
-var textPlayers = fs.readFileSync("./public/data/players.txt", 'utf-8');
-var eplPlayers = textPlayers.split("\n");
+var eplPlayers = ["https://www.transfermarkt.co.uk/manchester-city/leistungsdaten/verein/281/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/liverpool-fc/leistungsdaten/verein/31/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/tottenham-hotspur/leistungsdaten/verein/148/plus/1?reldata=GB1%262019",
+"https://www.transfermarkt.co.uk/chelsea-fc/leistungsdaten/verein/631/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/manchester-united/leistungsdaten/verein/985/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/arsenal-fc/leistungsdaten/verein/11/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/everton-fc/leistungsdaten/verein/29/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/leicester-city/leistungsdaten/verein/1003/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/west-ham-united/leistungsdaten/verein/379/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/afc-bournemouth/leistungsdaten/verein/989/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/wolverhampton-wanderers/leistungsdaten/verein/543/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/fc-southampton/leistungsdaten/verein/180/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/fc-watford/leistungsdaten/verein/1010/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/newcastle-united/leistungsdaten/verein/762/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/crystal-palace/leistungsdaten/verein/873/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/brighton-amp-hove-albion/leistungsdaten/verein/1237/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/fc-burnley/leistungsdaten/verein/1132/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/aston-villa/leistungsdaten/verein/405/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/norwich-city/leistungsdaten/verein/1123/reldata/GB1%262019/plus/1",
+"https://www.transfermarkt.co.uk/sheffield-united/leistungsdaten/verein/350/reldata/GB1%262019/plus/1",
+];
 
-var eplTeamColors = ["\x1b[36m", "\x1b[31m", "\x1b[37m", "\x1b[34m", "\x1b[31m", "\x1b[31m",
-  "\x1b[34m", "\x1b[34m", "\x1b[36m", "\x1b[40m", "\x1b[33m", "\x1b[31m", "\x1b[33m", "\x1b[40m",
+var eplTeamColors = ["\x1b[36m", "\x1b[31m", "\x1b[37m", "\x1b[34m", "\x1b[31m", "\x1b[31m", "\x1b[34m",
+  "\x1b[34m", "\x1b[36m", "\x1b[40m", "\x1b[33m", "\x1b[31m", "\x1b[33m", "\x1b[40m",
   "\x1b[46m", "\x1b[44m", "\x1b[46m", "\x1b[31m", "\x1b[33m", "\x1b[41m",
 ];
 
@@ -280,26 +318,17 @@ router.post('/team_rank', function(req, res, next) {
       var bottom = '';
       var relegation = '';
       for (var i = 0; i < results.length; i++) {
+        var str = ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n')
         if (i < 6) {
-          big6 += ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n');
+          big6 += str;
         } else if (i < 12) {
-          middle += ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n');
+          middle += str;
         } else if (i < 17) {
-          bottom += ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n');
+          bottom += str;
         } else {
-          relegation += ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n');
+          relegation += str;
         }
       }
-      // const responseBody = {
-      //     version: "2.0",
-      //     template: {
-      //         outputs: [{
-      //             simpleText: {
-      //                 text: text,
-      //             }
-      //         }]
-      //     }
-      // };
       const responseBody = {
         "version": "2.0",
         "template": {
@@ -333,7 +362,7 @@ router.post('/team_rank', function(req, res, next) {
 });
 
 // Get Player Ranking API
-router.get('/player_rank', function(req, res, next) {
+router.post('/player_rank', function(req, res, next) {
   var type = req.query.type;
   var playerRankQuery = ''
   if (type == 'goal') {
@@ -345,7 +374,59 @@ router.get('/player_rank', function(req, res, next) {
     if (err) {
       console.log(err);
     } else {
-      res.json(results);
+      var batch1 = '';
+      var batch2 = '';
+      var batch3 = '';
+      var batch4 = '';
+      for(var i=0; i<results.length; i++){
+        // var str = ((i + 1) + '위 : ' + results[i].name + ' : ' + results[i].appearances + '경기 ' + results[i].goals + '골\n');
+        var name = results[i].korean_name;
+        // if(results[i].nickname != ''){
+        //   name = results[i].nickname;
+        // }
+        if(type == 'goal'){
+          var str = (name + ' : ' + results[i].appearances + '경기 ' + results[i].goals + '골\n');
+        }else if(type == 'assist'){
+          var str = (name + ' : ' + results[i].appearances + '경기 ' + results[i].assists + '도움\n');
+        }
+        if(i<5){
+          batch1 += str;
+        }else if(i<10){
+          batch2 += str;
+        }else if(i<15){
+          batch3 += str;
+        }else{
+          batch4 += str;
+        }
+      }
+      const responseBody = {
+        "version": "2.0",
+        "template": {
+          "outputs": [{
+            "carousel": {
+              "type": "basicCard",
+              "items": [{
+                  "title": "월드클래스",
+                  "description": batch1,
+                },
+                {
+                  "title": "인터내셔널 클래스",
+                  "description": batch2,
+                },
+                {
+                  "title": "리그 클래스",
+                  "description": batch3,
+                },
+                {
+                  "title": "클럽 클래스",
+                  "description": batch4,
+                }
+              ]
+            }
+          }]
+        }
+      };
+      res.status(200).send(responseBody);
     }
   });
 });
