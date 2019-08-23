@@ -5,6 +5,7 @@ const cheerio = require("cheerio");
 const fs = require('fs');
 const db = require('../public/javascripts/lib/db');
 const kp = require('../public/javascripts/lib/koreanPatch');
+const sp = require('../public/javascripts/lib/stadiaPatch');
 
 var eplTeams = ["https://www.transfermarkt.co.uk/manchester-city/kader/verein/281/saison_id/2019/plus/1",
 "https://www.transfermarkt.co.uk/liverpool-fc/kader/verein/31/saison_id/2019/plus/1",
@@ -266,11 +267,9 @@ router.get('/player', function(req, res, next) {
     getHtml()
       .then(html => {
         var $ = cheerio.load(html.data);
-        const
-          $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
+        const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
         $trListStat.each(function(j, elem) {
-          var
-          name = $(this).find('a.spielprofil_tooltip').eq(0).text();
+          var name = $(this).find('a.spielprofil_tooltip').eq(0).text();
           // name = kp.changePlayerNameToKorean(name);
           console.log(name + " data updating...");
           const ps = $trListStat.eq(j);
@@ -432,8 +431,122 @@ router.post('/player_rank', function(req, res, next) {
 });
 
 // Get Schedule API
-router.get('/schedule', function(req, res, next) {
+router.get('/schedule', function (req, res, next) {
+    var schedulePage = "https://www.transfermarkt.com/premier-league/gesamtspielplan/wettbewerb/GB1/saison_id/2019";
+    const promises = [];
 
+    promises.push(new Promise(function (resolve, reject) {
+        const getHtml = async () => {
+            try {
+                return await axios.get(schedulePage);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        var match = new Array();
+        getHtml()
+            .then(html => {
+                const $ = cheerio.load(html.data);
+                const $columnList = $(".large-6.columns");
+
+                $columnList.each(function (i, elem) {
+                    if (i == 0) return true;
+                    let matchList = [];
+                    console.log(i + 'Round Parsing...');
+                    const $trList = $(this).children('div.box').children('table').find('tr');
+                    var count = 0;
+                    $trList.each(function (j, elem) {
+                        if (j == 0) return true;
+                        if (!$(this).hasClass('bg_blau_20')) {
+                            var time = $(this).find('td.zentriert').eq(0).text();
+                            time = time.replace(/\t/gi, '');
+                            time = time.replace(/\n/gi, '');
+                            matchList[count] = {
+                                date: $(this).find('td.hide-for-small').eq(0).children('a').text(),
+                                time: time,
+                                home: $(this).find('td.hauptlink').eq(0).children('a').text(),
+                                score: $(this).find('td.zentriert').eq(2).children('a').text(),
+                                away: $(this).find('td.hauptlink').eq(2).children('a').text(),
+                            };
+                            promises.push(new Promise(function (resolve, reject) {
+                                var insertScheduleQuery = 'insert into humba.schedule ' +
+                                    `values(${i}, '${matchList[count].date}', '${matchList[count].time}', '',` +
+                                    `'${matchList[count].home}','${matchList[count].away}','${matchList[count].score}');`;
+                                db.query(insertScheduleQuery, function (err, results) {
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        // console.log(results);
+                                    }
+                                });
+                            }));
+                            count++;
+                        }
+                    });
+                    match.push(matchList);
+                });
+                resolve(match);
+            });
+    }));
+    Promise.all(promises).then(function (values) {
+        // var msg = 'complete team rank update!';
+        // res.render('index', {
+        //   msg: msg,
+        // });
+        res.json(values);
+    });
+});
+
+// Update schedule data
+router.post('/schedule', function(req, res){
+  var round = req.query.round;
+  scheduleQuery = `select * from humba.schedule where round=${round};`;
+
+  db.query(scheduleQuery, function(err, results) {
+    if (err) {
+      console.log(err);
+    } else {
+      var matchday1 = '';
+      var matchday2 = '';
+      var matchday3 = '';
+      var matchday4 = '';
+      var items = new Array();
+      for(var i=0; i<results.length; i++){
+          var singleItem = new Object();
+          singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
+          var j=i;
+          var date = results[i].date;
+          while(results[j].date == ''){
+              date = results[j-1].date;
+              j--;
+          }
+          j=i;
+          var time = results[i].time;
+          while(results[j].time == ''){
+              time = results[j-1].time;
+              j--;
+          }
+          var stadia = sp.locateStadia(results[i].home);
+          singleItem.description = `${date} ${time} \n ${stadia}`;
+          var thumbnail = new Object();
+          thumbnail.imageUrl = sp.eplTeamImage(results[i].home);
+          singleItem.thumbnail = thumbnail;
+          items.push(singleItem);
+      }
+      const responseBody = {
+        "version": "2.0",
+        "template": {
+          "outputs": [{
+            "carousel": {
+              "type": "basicCard",
+              items,
+            }
+          }]
+        }
+      };
+      res.status(200).send(responseBody);
+    }
+  });
 });
 
 // Get Formation API
