@@ -56,6 +56,8 @@ var eplTeamColors = ["\x1b[36m", "\x1b[31m", "\x1b[37m", "\x1b[34m", "\x1b[31m",
   "\x1b[46m", "\x1b[44m", "\x1b[46m", "\x1b[31m", "\x1b[33m", "\x1b[41m",
 ];
 
+var week = ['일', '월', '화', '수', '목', '금', '토'];
+
 // REST API
 router.get('/', function(req, res, next) {
   var msg = 'on development!';
@@ -251,63 +253,68 @@ router.get('/team', function(req, res, next) {
 
 // Update Player Information
 router.get('/player', function(req, res, next) {
-  var query = parseInt(req.query.team);
+  // var query = parseInt(req.query.team);
   const promises = [];
 
-  // Parsing from transfermarktz.com
-  promises.push(new Promise(function(resolve, reject) {
-    const getHtml = async () => {
-      try {
-        return await axios.get(eplPlayers[query]);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+  for(var i=0; i<20; i++){
+    // console.log(i + " updating..");
+    // Parsing from transfermarktz.com
+    promises.push(new Promise(function(resolve, reject) {
+      const getHtml = async () => {
+        try {
+          return await axios.get(eplPlayers[i]);
+        } catch (error) {
+          console.error(error);
+        }
+      };
 
-    getHtml()
-      .then(html => {
-        var $ = cheerio.load(html.data);
-        const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
-        $trListStat.each(function(j, elem) {
-          var name = $(this).find('a.spielprofil_tooltip').eq(0).text();
-          // name = kp.changePlayerNameToKorean(name);
-          console.log(name + " data updating...");
-          const ps = $trListStat.eq(j);
-          var appearances = ps.find('td.zentriert').eq(4).text();
-          var goals = ps.find('td.zentriert').eq(5).text();
-          var assists = ps.find('td.zentriert').eq(6).text();
-          var yellows = ps.find('td.zentriert').eq(7).text();
-          var double_yellows = ps.find('td.zentriert').eq(8).text();
-          var reds = ps.find('td.zentriert').eq(9).text();
-          var minutes = ps.find('td.rechts').eq(0).text();
+      getHtml()
+        .then(html => {
+          var $ = cheerio.load(html.data);
+          const $trListStat = $('div.responsive-table').find('tr.odd, tr.even');
+          $trListStat.each(function(j, elem) {
+            var name = $(this).find('a.spielprofil_tooltip').eq(0).text();
+            // name = kp.changePlayerNameToKorean(name);
+            console.log(name + " data updating...");
+            const ps = $trListStat.eq(j);
+            var appearances = ps.find('td.zentriert').eq(4).text();
+            var goals = ps.find('td.zentriert').eq(5).text();
+            var assists = ps.find('td.zentriert').eq(6).text();
+            var yellows = ps.find('td.zentriert').eq(7).text();
+            var double_yellows = ps.find('td.zentriert').eq(8).text();
+            var reds = ps.find('td.zentriert').eq(9).text();
+            var minutes = ps.find('td.rechts').eq(0).text();
 
-          promises.push(new Promise(function(resolve, reject) {
-            var updatePlayerQuery = 'update humba.players ' +
-              `set appearances="${appearances}", goals="${goals}", assists="${assists}", yellows="${yellows}",` +
-              `double_yellows="${double_yellows}", reds="${reds}", minutes="${minutes}" ` +
-              `where name="${name}";`;
-            db.query(updatePlayerQuery, function(err, results) {
-              if (err) {
-                console.log(err);
-              } else {}
-            });
-          }));
+            promises.push(new Promise(function(resolve, reject) {
+              var updatePlayerQuery = 'update humba.players ' +
+                `set appearances="${appearances}", goals="${goals}", assists="${assists}", yellows="${yellows}",` +
+                `double_yellows="${double_yellows}", reds="${reds}", minutes="${minutes}" ` +
+                `where name="${name}";`;
+              db.query(updatePlayerQuery, function(err, results) {
+                if (err) {
+                  console.log(err);
+                } else {}
+              });
+            }));
+          });
+          resolve(true);
         });
-        resolve(true);
-      });
-  }));
+    }));
+  }
+
 
   Promise.all(promises).then(function(values) {
     var msg = 'complete player rank update!';
     res.render('index', {
       msg: msg,
     });
+    res.json(values);
   });
 });
 
 // Get Team Ranking API
 router.post('/team_rank', function(req, res, next) {
-  var teamRankQuery = 'select * from humba.teams order by points desc, GD desc, GF desc, team;';
+  var teamRankQuery = 'select * from humba.teams order by points desc, played, GD desc, team;';
   db.query(teamRankQuery, function(err, results) {
     if (err) {
       console.log(err);
@@ -317,7 +324,7 @@ router.post('/team_rank', function(req, res, next) {
       var bottom = '';
       var relegation = '';
       for (var i = 0; i < results.length; i++) {
-        var str = ((i + 1) + '위 : ' + results[i].team + ' ,승점 : ' + results[i].points + '\n')
+        var str = ((i + 1) + ' : ' + results[i].team + ' , ' + results[i].played + '경기 ' + results[i].points + '점\n');
         if (i < 6) {
           big6 += str;
         } else if (i < 12) {
@@ -432,76 +439,94 @@ router.post('/player_rank', function(req, res, next) {
 
 // Get Schedule API
 router.get('/schedule', function (req, res, next) {
-    var schedulePage = "https://www.transfermarkt.com/premier-league/gesamtspielplan/wettbewerb/GB1/saison_id/2019";
-    const promises = [];
+    var clearTableQuery = 'delete from humba.schedule where stadia=\'\'';
+    db.query(clearTableQuery, function (err, result) {
+        if (err) {
+            console.log(err);
+        } else {
+            var schedulePage = "https://www.transfermarkt.com/premier-league/gesamtspielplan/wettbewerb/GB1/saison_id/2019";
+            const promises = [];
 
-    promises.push(new Promise(function (resolve, reject) {
-        const getHtml = async () => {
-            try {
-                return await axios.get(schedulePage);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        var match = new Array();
-        getHtml()
-            .then(html => {
-                const $ = cheerio.load(html.data);
-                const $columnList = $(".large-6.columns");
+            promises.push(new Promise(function (resolve, reject) {
+                const getHtml = async () => {
+                    try {
+                        return await axios.get(schedulePage);
+                    } catch (error) {
+                        console.error(error);
+                    }
+                };
+                var match = new Array();
+                getHtml()
+                    .then(html => {
+                        const $ = cheerio.load(html.data);
+                        const $columnList = $(".large-6.columns");
 
-                $columnList.each(function (i, elem) {
-                    if (i == 0) return true;
-                    let matchList = [];
-                    console.log(i + 'Round Parsing...');
-                    const $trList = $(this).children('div.box').children('table').find('tr');
-                    var count = 0;
-                    $trList.each(function (j, elem) {
-                        if (j == 0) return true;
-                        if (!$(this).hasClass('bg_blau_20')) {
-                            var time = $(this).find('td.zentriert').eq(0).text();
-                            time = time.replace(/\t/gi, '');
-                            time = time.replace(/\n/gi, '');
-                            matchList[count] = {
-                                date: $(this).find('td.hide-for-small').eq(0).children('a').text(),
-                                time: time,
-                                home: $(this).find('td.hauptlink').eq(0).children('a').text(),
-                                score: $(this).find('td.zentriert').eq(2).children('a').text(),
-                                away: $(this).find('td.hauptlink').eq(2).children('a').text(),
-                            };
-                            promises.push(new Promise(function (resolve, reject) {
-                                var insertScheduleQuery = 'insert into humba.schedule ' +
-                                    `values(${i}, '${matchList[count].date}', '${matchList[count].time}', '',` +
-                                    `'${matchList[count].home}','${matchList[count].away}','${matchList[count].score}');`;
-                                db.query(insertScheduleQuery, function (err, results) {
-                                    if (err) {
-                                        console.log(err);
-                                    } else {
-                                        // console.log(results);
-                                    }
-                                });
-                            }));
-                            count++;
-                        }
+                        $columnList.each(function (i, elem) {
+                            if (i == 0 || i>38) return true;
+                            let matchList = [];
+                            // console.log(i + 'Round Parsing...');
+                            const $trList = $(this).children('div.box').children('table').find('tr');
+                            var count = 0;
+                            $trList.each(function (j, elem) {
+                                if (j == 0) return true;
+                                if (!$(this).hasClass('bg_blau_20')) {
+                                    var time = $(this).find('td.zentriert').eq(0).text();
+                                    time = time.replace(/\t/gi, '');
+                                    time = time.replace(/\n/gi, '');
+                                    var date = $(this).find('td.hide-for-small').eq(0).children('a').text();
+
+                                    matchList[count] = {
+                                        date: date,
+                                        time: time,
+                                        home: $(this).find('td.hauptlink').eq(0).children('a').text(),
+                                        score: $(this).find('td.zentriert').eq(2).children('a').text(),
+                                        away: $(this).find('td.hauptlink').eq(2).children('a').text(),
+                                    };
+                                    promises.push(new Promise(function (resolve, reject) {
+                                        var insertScheduleQuery = 'insert into humba.schedule ' +
+                                            `values(${i}, '${matchList[count].date}', '${matchList[count].time}', '',` +
+                                            `'${matchList[count].home}','${matchList[count].away}','${matchList[count].score}');`;
+                                        db.query(insertScheduleQuery, function (err, results) {
+                                            if (err) {
+                                                console.log(err);
+                                            } else {
+                                                // console.log(results);
+                                            }
+                                        });
+                                    }));
+                                    count++;
+                                }
+                            });
+                            match.push(matchList);
+                        });
+                        resolve(match);
                     });
-                    match.push(matchList);
+            }));
+            Promise.all(promises).then(function (values) {
+                var msg = 'complete team schedule update!';
+                res.render('index', {
+                  msg: msg,
                 });
-                resolve(match);
+                // res.json(values);
             });
-    }));
-    Promise.all(promises).then(function (values) {
-        // var msg = 'complete team rank update!';
-        // res.render('index', {
-        //   msg: msg,
-        // });
-        res.json(values);
-    });
+        }
+    })
+
 });
 
 // Update schedule data
 router.post('/schedule', function(req, res){
+  var scheduleQuery = '';
   var round = req.query.round;
-  scheduleQuery = `select * from humba.schedule where round=${round};`;
-
+  scheduleQuery = `select * from humba.schedule where round=${round} limit 10;`;
+  // var time = req.query.time;
+  // if(time == 'week'){
+  //     scheduleQuery = `select * from humba.schedule where time=${}`;
+  // }else if(time == 'today'){
+  //     scheduleQuery = ``;
+  // }else if(time == 'tomorrow'){
+  //     scheduleQuery = ``;
+  // }
   db.query(scheduleQuery, function(err, results) {
     if (err) {
       console.log(err);
@@ -513,7 +538,11 @@ router.post('/schedule', function(req, res){
       var items = new Array();
       for(var i=0; i<results.length; i++){
           var singleItem = new Object();
-          singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
+          if(results[i].score != '-:-'){
+              singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)} \n${results[i].score}`;
+          }else{
+              singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
+          }
           var j=i;
           var date = results[i].date;
           while(results[j].date == ''){
@@ -526,8 +555,14 @@ router.post('/schedule', function(req, res){
               time = results[j-1].time;
               j--;
           }
+          var nDate = new Date(date + " " + time);
+          var dayOfWeek = week[nDate.getDay()];
+          nDate.setHours(nDate.getHours()+7);
+          date = nDate.getFullYear().toString().substr(-2) + '년 ' + (nDate.getMonth()+1) + '월 ' + nDate.getDate() + '일';
+          time = nDate.getHours() + '시 ' + ("00"+nDate.getMinutes()).slice(-2) + '분';
+
           var stadia = sp.locateStadia(results[i].home);
-          singleItem.description = `${date} ${time} \n ${stadia}`;
+          singleItem.description = `${date} ${time}(${dayOfWeek}) \n${stadia}`;
           var thumbnail = new Object();
           thumbnail.imageUrl = sp.eplTeamImage(results[i].home);
           singleItem.thumbnail = thumbnail;
