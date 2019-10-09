@@ -43,7 +43,7 @@ Date | Function | Details
 19.08.22 | AWS EC2 | Setup ubuntu server.
 19.09.06 | Big Match | You can check the upcoming big matches!
 
-### 홍보
+### Promotion
 <img src="./promo/miniposter.png" alt="miniposter" width="400"/>
 <img src="./promo/schedule.png" alt="schedule" />
 <img src="./promo/team_rank.png" alt="team" />
