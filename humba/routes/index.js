@@ -61,7 +61,7 @@ var big6 = ['Liverpool', 'Man City', 'Man Utd', 'Spurs', 'Chelsea', 'Arsenal'];
 
 // REST API
 router.get('/', function (req, res, next) {
-    var msg = 'on development!';
+    var msg = '개발중입니다!';
     res.render('index', {
         msg: msg,
     });
@@ -245,7 +245,7 @@ router.get('/team', function (req, res, next) {
     }));
 
     Promise.all(promises).then(function (values) {
-        var msg = 'complete team rank update!';
+        var msg = '팀순위 업데이트 완료!';
         res.render('index', {
             msg: msg,
         });
@@ -305,11 +305,11 @@ router.get('/player', function (req, res, next) {
 
 
     Promise.all(promises).then(function (values) {
-        var msg = 'complete player rank update!';
+        var msg = '플레이어 순위 업데이트 완료!';
         res.render('index', {
             msg: msg,
         });
-        res.json(values);
+        // res.json(values);
     });
 });
 
@@ -504,7 +504,7 @@ router.get('/schedule', function (req, res, next) {
                     });
             }));
             Promise.all(promises).then(function (values) {
-                var msg = 'complete team schedule update!';
+                var msg = 'EPL 일정 업데이트 완료!';
                 res.render('index', {
                     msg: msg,
                 });

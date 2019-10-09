@@ -1,9 +1,34 @@
-Hello! Humba is here!
-<br>
-<%=msg%>
-<br>
-<button onclick = "location.href = '/team'">팀 정보 업데이트</button>
-<br>
-<button onclick = "location.href = '/player'">선수 정보 업데이트</button>
-<br>
-<button onclick = "location.href = '/schedule'">일정 업데이트</button>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+<link rel="stylesheet" href="/stylesheets/style.css">
+<div class="container">
+    <div class="col-md-12">
+        <!-- <div class="loading"></div> -->
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="header">
+                <div class="span8">
+                    <p class="description" style="font-size:large; margin-left:20px; margin-top:20px;">
+                        훔바봇 개발자 웹페이지입니다.
+                        <br>
+                        <%=msg%>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12" style="margin-top:20px;">
+        <button type="button" class="btn btn-info" style="width:100%; height:80px; font-size:20px; color:black;"
+            onclick="location.href='/team'">팀 정보 업데이트</button>
+    </div>
+    <div class=" col-md-12" style="margin-top:20px;">
+            <button type="button" class="btn btn-info" style="width: 100%; height:80px; font-size:20px; color:black;"
+                onclick="location.href = '/player'">선수 정보 업데이트</button>
+    </div>
+    <div class="col-md-12" style="margin-top:20px;">
+        <button type="button" class="btn btn-info" style="width: 100%; height:80px; font-size:20px; color:black;"
+            onclick="location.href = '/schedule'">일정 업데이트</button>
+    </div>
+</div>
