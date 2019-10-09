@@ -41,6 +41,13 @@ Date | Function | Details
 19.08.19 | Crawling | Set basic crawling functions.
 19.08.21 | MySQL | Connect DB and sync with parsed data.
 19.08.22 | AWS EC2 | Setup ubuntu server.
+19.09.06 | Big Match | You can check the upcoming big matches!
+
+### 홍보
+<img src="./promo/miniposter.png" alt="miniposter" width="400"/>
+<img src="./promo/schedule.png" alt="schedule" />
+<img src="./promo/team_rank.png" alt="team" />
+<img src="./promo/goal_rank.png" alt="goal" />
 
 ### Contact
 hanorang2@gmail.com
