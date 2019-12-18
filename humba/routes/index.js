@@ -57,7 +57,8 @@ var eplTeamColors = ["\x1b[36m", "\x1b[31m", "\x1b[37m", "\x1b[34m", "\x1b[31m",
 ];
 
 var week = ['일', '월', '화', '수', '목', '금', '토'];
-var big6 = ['Liverpool', 'Man City', 'Man Utd', 'Spurs', 'Chelsea', 'Arsenal'];
+var big6 = ['Liverpool', 'Man City', 'Spurs', 'Chelsea', 'Arsenal', 'Leicester', 'Man Utd'];
+var worldTimeDifference = 8;
 
 // REST API
 router.get('/', function (req, res, next) {
@@ -364,6 +365,7 @@ router.post('/team_rank', function (req, res, next) {
                 }
             };
             res.status(200).send(responseBody);
+            // res.json(responseBody);
         }
     });
 });
@@ -373,9 +375,9 @@ router.post('/player_rank', function (req, res, next) {
     var type = req.query.type;
     var playerRankQuery = ''
     if (type == 'goal') {
-        playerRankQuery = 'select * from humba.players order by goals desc, team limit 20;';
+        playerRankQuery = 'select * from humba.players order by CAST(goals AS UNSIGNED) desc, team limit 20;';
     } else if (type == 'assist') {
-        playerRankQuery = 'select * from humba.players order by assists desc, team limit 20;';
+        playerRankQuery = 'select * from humba.players order by CAST(assists AS UNSIGNED) desc, team limit 20;';
     }
     db.query(playerRankQuery, function (err, results) {
         if (err) {
@@ -557,10 +559,14 @@ router.post('/schedule', function (req, res) {
                     j--;
                 }
                 var nDate = new Date(date + " " + time);
+                nDate.setHours(nDate.getHours() + worldTimeDifference);
                 var dayOfWeek = week[nDate.getDay()];
-                nDate.setHours(nDate.getHours() + 7);
                 date = nDate.getFullYear().toString().substr(-2) + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
-                time = nDate.getHours() + '시 ' + ("00" + nDate.getMinutes()).slice(-2) + '분';
+                if(nDate.getHours() < 12){
+                    time = '오전 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+                }else{
+                    time = '오후 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+                }
 
                 var stadia = sp.locateStadia(results[i].home);
                 singleItem.description = `${date} ${time}(${dayOfWeek}) \n${stadia}`;
@@ -612,13 +618,17 @@ router.post('/big_match', function (req, res) {
                 if (big6.includes(results[i].home) && big6.includes(results[i].away) && count < 10) {
                     singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
                     var nDate = new Date(date + " " + time);
+                    nDate.setHours(nDate.getHours() + worldTimeDifference);
                     var dayOfWeek = week[nDate.getDay()];
-                    nDate.setHours(nDate.getHours() + 7);
-                    date = nDate.getFullYear().toString().substr(-2) + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
-                    time = nDate.getHours() + '시 ' + ("00" + nDate.getMinutes()).slice(-2) + '분';
+                    date = nDate.getFullYear().toString() + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
+                    if(nDate.getHours() < 12){
+                        time = '오전 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+                    }else{
+                        time = '오후 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+                    }
 
                     var stadia = sp.locateStadia(results[i].home);
-                    singleItem.description = `${date} ${time}(${dayOfWeek}) \n${stadia}`;
+                    singleItem.description = `${date} ${time} (${dayOfWeek}) \n${stadia}`;
                     var thumbnail = new Object();
                     thumbnail.imageUrl = sp.eplTeamImage(results[i].home);
                     singleItem.thumbnail = thumbnail;
@@ -646,6 +656,42 @@ router.post('/big_match', function (req, res) {
 // 팀별 스케쥴
 router.post('/team_schedule', function (req, res) {
     var team = req.query.team;
+});
+
+// 팀별 정보
+router.post('/team_information', function (req, res) {
+    const responseBody = {
+        "userRequest": {
+            "timezone": "Asia/Seoul",
+            "params": {},
+            "block": {
+                "id": "<블록 id>",
+                "name": "<블록 이름>"
+            },
+            "utterance": "<사용자 발화>",
+            "lang": "kr",
+            "user": {
+                "id": "<사용자 botUserKey>",
+                "type": "botUserKey",
+                "properties": {
+                    "plusfriendUserKey": "<카카오톡 채널 사용자 id>"
+                }
+            }
+        },
+        "contexts": [],
+        "bot": {
+            "id": "<봇 id>",
+            "name": "<봇 이름>"
+        },
+        "action": {
+            "name": "<스킬 이름>",
+            "clientExtra": null,
+            "params": {},
+            "id": "<스킬 id>",
+            "detailParams": {}
+        }
+    };
+    res.status(200).send(responseBody);
 });
 
 // Get Formation API
