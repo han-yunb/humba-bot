@@ -709,4 +709,28 @@ router.get('/motm', function (req, res, next) {
 
 });
 
+// 일정 자동 업데이트하는 함수
+// get.schedule 부분을 함수로 모듈화해서 이쪽에서 실행되도록 설정
+function scheduleAutoUpdate(){
+    var currentTime; // 현재 시간
+    var query; // DB 쿼리문
+
+    db.query(query, function(err, results){
+        if(err){
+            console.log(err);
+        }else{
+            console.log(results);
+        }
+    });
+}
+
+// 스케줄 등록하는 함수
+function registerSchedule(time){
+    // 한번만 실행하는 함수
+    // https://stackoverflow.com/questions/5473780/how-do-i-set-up-cron-to-run-a-file-just-once-at-a-specific-time
+}
+
+// 스케줄 초기화하는 함수
+
+
 module.exports = router;
