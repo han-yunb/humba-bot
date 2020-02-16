@@ -442,6 +442,7 @@ router.post('/player_rank', function (req, res, next) {
 
 // Get Schedule API
 router.get('/schedule', function (req, res, next) {
+    var round = parseInt(req.query.round);
     var clearTableQuery = 'delete from humba.schedule where stadia=\'\'';
     db.query(clearTableQuery, function (err, result) {
         if (err) {
@@ -465,7 +466,8 @@ router.get('/schedule', function (req, res, next) {
                         const $columnList = $(".large-6.columns");
 
                         $columnList.each(function (i, elem) {
-                            if (i == 0 || i > 38) return true;
+                            // if (i == 0 || i > 38) return true;
+                            if(i < round) return true;
                             let matchList = [];
                             // console.log(i + 'Round Parsing...');
                             const $trList = $(this).children('div.box').children('table').find('tr');
@@ -493,7 +495,7 @@ router.get('/schedule', function (req, res, next) {
                                             if (err) {
                                                 console.log(err);
                                             } else {
-                                                // console.log(results);
+                                                console.log(results);
                                             }
                                         });
                                     }));
@@ -507,10 +509,10 @@ router.get('/schedule', function (req, res, next) {
             }));
             Promise.all(promises).then(function (values) {
                 var msg = 'EPL 일정 업데이트 완료!';
-                res.render('index', {
-                    msg: msg,
-                });
-                // res.json(values);
+                // res.render('index', {
+                //     msg: msg,
+                // });
+                res.json(values);
             });
         }
     })
@@ -731,6 +733,8 @@ function registerSchedule(time){
 }
 
 // 스케줄 초기화하는 함수
+function resetSchedule(){
 
+}
 
 module.exports = router;
