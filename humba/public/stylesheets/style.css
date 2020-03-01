@@ -133,3 +133,19 @@ a {
         transform: rotate(360deg);
     }
 }
+
+input[name="round"] {
+    width: 200px;
+    height: 20px;
+    padding-right: 50px;
+}
+
+input[name="round-submit"] {
+    margin-left: -200px;
+    height: 80px;
+    width: 200px;
+    /* background: #00B7FF; */
+    color: black;
+    border: 0;
+    -webkit-appearance: none;
+}

@@ -467,7 +467,7 @@ router.get('/schedule', function (req, res, next) {
 
                         $columnList.each(function (i, elem) {
                             // if (i == 0 || i > 38) return true;
-                            if(i < round) return true;
+                            if (i < round) return true;
                             let matchList = [];
                             // console.log(i + 'Round Parsing...');
                             const $trList = $(this).children('div.box').children('table').find('tr');
@@ -540,43 +540,8 @@ router.post('/schedule', function (req, res) {
             var matchday2 = '';
             var matchday3 = '';
             var matchday4 = '';
-            var items = new Array();
-            for (var i = 0; i < results.length; i++) {
-                var singleItem = new Object();
-                if (results[i].score != '-:-') {
-                    singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)} \n${results[i].score}`;
-                } else {
-                    singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
-                }
-                var j = i;
-                var date = results[i].date;
-                while (results[j].date == '') {
-                    date = results[j - 1].date;
-                    j--;
-                }
-                j = i;
-                var time = results[i].time;
-                while (results[j].time == '') {
-                    time = results[j - 1].time;
-                    j--;
-                }
-                var nDate = new Date(date + " " + time);
-                nDate.setHours(nDate.getHours() + worldTimeDifference);
-                var dayOfWeek = week[nDate.getDay()];
-                date = nDate.getFullYear().toString().substr(-2) + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
-                if(nDate.getHours() < 12){
-                    time = '오전 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
-                }else{
-                    time = '오후 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
-                }
+            var items = makeItems(results);
 
-                var stadia = sp.locateStadia(results[i].home);
-                singleItem.description = `${date} ${time}(${dayOfWeek}) \n${stadia}`;
-                var thumbnail = new Object();
-                thumbnail.imageUrl = sp.eplTeamImage(results[i].home);
-                singleItem.thumbnail = thumbnail;
-                items.push(singleItem);
-            }
             const responseBody = {
                 "version": "2.0",
                 "template": {
@@ -595,7 +560,7 @@ router.post('/schedule', function (req, res) {
 
 // 빅매치
 router.post('/big_match', function (req, res) {
-    var query = 'select * from humba.schedule where score = \"-:-\"';
+    var query = 'select * from humba.schedule where score = \"-:-\" or score = \"ppd.\";'
     db.query(query, function (err, results) {
         if (err) {
             console.log(err);
@@ -623,9 +588,9 @@ router.post('/big_match', function (req, res) {
                     nDate.setHours(nDate.getHours() + worldTimeDifference);
                     var dayOfWeek = week[nDate.getDay()];
                     date = nDate.getFullYear().toString() + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
-                    if(nDate.getHours() < 12){
+                    if (nDate.getHours() < 12) {
                         time = '오전 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
-                    }else{
+                    } else {
                         time = '오후 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
                     }
 
@@ -713,28 +678,77 @@ router.get('/motm', function (req, res, next) {
 
 // 일정 자동 업데이트하는 함수
 // get.schedule 부분을 함수로 모듈화해서 이쪽에서 실행되도록 설정
-function scheduleAutoUpdate(){
+function scheduleAutoUpdate() {
     var currentTime; // 현재 시간
     var query; // DB 쿼리문
 
-    db.query(query, function(err, results){
-        if(err){
+    db.query(query, function (err, results) {
+        if (err) {
             console.log(err);
-        }else{
+        } else {
             console.log(results);
         }
     });
 }
 
 // 스케줄 등록하는 함수
-function registerSchedule(time){
+function registerSchedule(time) {
     // 한번만 실행하는 함수
     // https://stackoverflow.com/questions/5473780/how-do-i-set-up-cron-to-run-a-file-just-once-at-a-specific-time
 }
 
 // 스케줄 초기화하는 함수
-function resetSchedule(){
+function resetSchedule() {
 
+}
+
+function makeItems(results) {
+    var items = new Array();
+
+    for (var i = 0; i < results.length; i++) {
+        var singleItem = new Object();
+        if (results[i].score == '-:-') {
+            singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)}`;
+        } else if (results[i].score == 'ppd.') {
+            singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)} \n연기됨`;
+        } else {
+            singleItem.title = `${kp.changeTeamNameToKorean(results[i].home)} vs ${kp.changeTeamNameToKorean(results[i].away)} \n${results[i].score}`;
+        }
+        var stadia = sp.locateStadia(results[i].home);
+
+        var j = i;
+        var date = results[i].date;
+        if (date == '-') {
+            singleItem.description = `미정 \n${stadia}`;
+        } else {
+            while (results[j].date == '') {
+                date = results[j - 1].date;
+                j--;
+            }
+            j = i;
+            var time = results[i].time;
+            while (results[j].time == '') {
+                time = results[j - 1].time;
+                j--;
+            }
+            var nDate = new Date(date + " " + time);
+            nDate.setHours(nDate.getHours() + worldTimeDifference);
+            var dayOfWeek = week[nDate.getDay()];
+            date = nDate.getFullYear().toString().substr(-2) + '년 ' + (nDate.getMonth() + 1) + '월 ' + nDate.getDate() + '일';
+            if (nDate.getHours() < 12) {
+                time = '오전 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+            } else {
+                time = '오후 ' + nDate.getHours() + ':' + ("00" + nDate.getMinutes()).slice(-2);
+            }
+            singleItem.description = `${date} ${time}(${dayOfWeek}) \n${stadia}`;
+        }
+        var thumbnail = new Object();
+        thumbnail.imageUrl = sp.eplTeamImage(results[i].home);
+        singleItem.thumbnail = thumbnail;
+
+        items.push(singleItem);
+    }
+    return items;
 }
 
 module.exports = router;
