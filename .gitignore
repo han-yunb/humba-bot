@@ -1,3 +1,5 @@
 node_modules/
 lib/
 data/
+venv/
+humba_django/humba_django/__pycache__/
