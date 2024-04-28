@@ -48,6 +48,3 @@ Date | Function | Details
 <img src="./promo/schedule.png" alt="schedule" />
 <img src="./promo/team_rank.png" alt="team" />
 <img src="./promo/goal_rank.png" alt="goal" />
-
-### Contact
-hanorang2@gmail.com
